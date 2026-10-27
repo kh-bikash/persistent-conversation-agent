@@ -36,3 +36,15 @@ def test_rejects_embedding_model_change(tmp_path):
         ConversationMemory(
             db, Stub(), tenant_id="user-1", embedder=HashingEmbedder(128)
         )
+
+
+def test_legacy_database_requires_explicit_tenant_migration(tmp_path):
+    import sqlite3
+
+    db = tmp_path / "old.db"
+    with sqlite3.connect(db) as connection:
+        connection.execute(
+            "CREATE TABLE messages(id INTEGER PRIMARY KEY, session TEXT, role TEXT, content TEXT, created_at REAL)"
+        )
+    with pytest.raises(RuntimeError, match="explicit owner"):
+        ConversationMemory(db, Stub(), tenant_id="user-1")

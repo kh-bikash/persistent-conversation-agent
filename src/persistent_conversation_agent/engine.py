@@ -82,6 +82,12 @@ class ConversationMemory:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, tenant TEXT NOT NULL, session TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at REAL NOT NULL)"
             )
+            if "tenant" not in {
+                row[1] for row in db.execute("PRAGMA table_info(messages)")
+            }:
+                raise RuntimeError(
+                    "Legacy memory database has no tenant column; back it up and migrate messages with an explicit owner"
+                )
             db.execute(
                 "CREATE INDEX IF NOT EXISTS messages_tenant_session ON messages(tenant,session,id)"
             )
