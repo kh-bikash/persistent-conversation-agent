@@ -37,3 +37,7 @@ SQLite stores `messages(tenant,session,role,content,created_at)`, `vectors(messa
 The default hashing embedder is a dependency free lexical baseline. `OpenAIEmbedding` supplies semantic vectors through a live embeddings API. `metadata` records the embedding model ID and rejects a different model on an existing store, because incompatible vector spaces produce misleading recall. Recall computes cosine similarity over stored normalized vectors; this is a linear scan suitable for modest single node collections. Oversized context is summarized and saved as a checkpoint. `forget_session` deletes messages, vectors, and that summary.
 
 For high volume collections, replace the scan with a vector index. For regulatory deletion, also address database backups and provider retention policy.
+
+## Product interfaces and trust boundary
+
+The installed console command and local browser call the same product operation in `src/*/__main__.py`; the browser does not replace the engine's validation or state transitions. `src/*/web.py` serves HTML and a JSON action endpoint with a one-megabyte request limit and a per-process CSRF token. It binds to loopback by default. A non-loopback bind requires `AGENT_WEB_TOKEN` of at least 16 characters, checked on every action request. The page never embeds the access token; an operator enters it in the browser. Treat the browser as an operator interface and place TLS plus identity-aware access control in front of any public endpoint. The non-root container is described in `DEPLOYMENT.md`.

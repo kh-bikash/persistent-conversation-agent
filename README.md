@@ -24,6 +24,8 @@ pytest -q
 
 For live model calls, set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` and `OPENAI_BASE_URL` as shown in `.env.example`. The test suite uses stubs and needs no model key.
 
+The installed `conversation-memory` command provides a durable product workflow. For example, `conversation-memory --db memory.sqlite3 --tenant alice add session-1 user "I prefer short answers"` stores a memory; replace `add` with `history session-1`, `recall "short answers"`, `chat session-1 "How should you respond?"`, or `forget session-1`. Only `chat` needs the model key with the default hashing embedder. Add `--semantic` before the command to use the configured OpenAI embedding model for semantic recall; select that mode when creating a new database and keep it consistent. To use the browser, run `conversation-memory --db memory.sqlite3 --tenant alice serve --port 8080` and open `http://127.0.0.1:8080`. The tenant is set by the server operator, not a browser form.
+
 ```python
 from persistent_conversation_agent.engine import ConversationMemory
 from persistent_conversation_agent.llm import OpenAICompatibleLLM
@@ -38,6 +40,8 @@ memory.forget_session("session-1")
 
 ```mermaid
 flowchart LR
+    CLI[Command line] --> User
+    Browser[Browser interface] --> User
     User[Authenticated tenant and message] --> Memory[Conversation memory]
     Memory --> Messages[(SQLite messages)]
     Memory --> Vectors[(Vector store)]
@@ -62,6 +66,8 @@ Session messages -> SQLite table and vector index -> recent window plus cross-se
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, and operations.
 
 ## Deployment and safety
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the non-root container, token-protected browser, data mounts, and release checks.
 
 The bundled hashing embedder is a lexical baseline; inject a semantic embedder for production recall. Every query is scoped to a required tenant ID. The integrating service must authenticate the user and derive that ID from its trusted identity system. The forget operation deletes one session's messages, vectors, and summary.
 
