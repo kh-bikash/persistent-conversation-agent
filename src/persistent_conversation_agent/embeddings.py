@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -29,8 +30,10 @@ class OpenAIEmbedding:
         )
 
     def embed(self, text: str) -> list[float]:
-        if not self.base_url.startswith("https://") and not self.base_url.startswith(
-            "http://localhost"
+        parsed = urlparse(self.base_url)
+        if parsed.scheme != "https" and not (
+            parsed.scheme == "http"
+            and parsed.hostname in {"localhost", "127.0.0.1", "::1"}
         ):
             raise ValueError("Embedding endpoint must use HTTPS or localhost")
         request = Request(
