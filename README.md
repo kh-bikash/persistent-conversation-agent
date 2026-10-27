@@ -19,7 +19,7 @@ For live model calls, set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` and `OP
 from persistent_conversation_agent.engine import ConversationMemory
 from persistent_conversation_agent.llm import OpenAICompatibleLLM
 
-memory = ConversationMemory("memory.sqlite3", OpenAICompatibleLLM.from_env())
+memory = ConversationMemory("memory.sqlite3", OpenAICompatibleLLM.from_env(), tenant_id="user-123")
 print(memory.respond("session-1", "Remember that my preferred format is bullet points."))
 print(memory.respond("session-2", "What format do I prefer?"))
 memory.forget_session("session-1")
@@ -33,7 +33,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, 
 
 ## Deployment and safety
 
-The bundled hashing embedder is a lexical baseline; inject a semantic embedder for production recall. This example assumes one user's sessions. Add a tenant/user column and enforce it in every query before using a shared multi-user service. The forget operation deletes one session's messages and vectors.
+The bundled hashing embedder is a lexical baseline; inject a semantic embedder for production recall. Every query is scoped to a required tenant ID. The integrating service must authenticate the user and derive that ID from its trusted identity system. The forget operation deletes one session's messages, vectors, and summary.
+
+For semantic recall, pass `embedder=OpenAIEmbedding.from_env()` from `persistent_conversation_agent.embeddings` when constructing `ConversationMemory`. Rebuild an existing vector store when changing the embedding model or dimensions. SQLite performs a linear vector scan; use a dedicated vector index for large collections.
 
 Install this as a library in an authenticated application or worker. Supply the LLM adapter through dependency injection. Keep secrets in environment variables, never in source control.
 
