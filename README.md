@@ -36,6 +36,27 @@ memory.forget_session("session-1")
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    User[Authenticated tenant and message] --> Memory[Conversation memory]
+    Memory --> Messages[(SQLite messages)]
+    Memory --> Vectors[(Vector store)]
+    Memory --> Summary[(Saved summaries)]
+    Messages --> Context[Recent context]
+    Vectors --> Recall[Cross session recall]
+    Summary --> Context
+    Recall --> Context
+    Context --> LLM[Response model]
+    LLM --> Memory
+    Memory --> Reply[Reply]
+```
+
+| Component | Responsibility |
+|---|---|
+| Tenant boundary | Scopes reads and deletions by a required tenant ID. |
+| Embedding adapter | Uses a local baseline or an injected semantic embedding model. |
+| Context manager | Combines recent turns, vector recall, and saved compression. |
+
 Session messages -> SQLite table and vector index -> recent window plus cross-session cosine search -> optional compression -> model -> durable reply.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, and operations.
