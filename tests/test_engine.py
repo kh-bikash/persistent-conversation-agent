@@ -1,5 +1,6 @@
-from persistent_conversation_agent.engine import ConversationMemory, HashingEmbedder
 import pytest
+
+from persistent_conversation_agent.engine import ConversationMemory, HashingEmbedder
 
 
 class Stub:
@@ -32,4 +33,6 @@ def test_rejects_embedding_model_change(tmp_path):
     db = tmp_path / "memory.db"
     ConversationMemory(db, Stub(), tenant_id="user-1", embedder=HashingEmbedder(64))
     with pytest.raises(ValueError, match="Embedding model differs"):
-        ConversationMemory(db, Stub(), tenant_id="user-1", embedder=HashingEmbedder(128))
+        ConversationMemory(
+            db, Stub(), tenant_id="user-1", embedder=HashingEmbedder(128)
+        )

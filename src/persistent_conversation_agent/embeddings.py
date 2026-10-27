@@ -18,20 +18,30 @@ class OpenAIEmbedding:
         return "openai:" + self.model
 
     @classmethod
-    def from_env(cls) -> "OpenAIEmbedding":
+    def from_env(cls) -> OpenAIEmbedding:
         key = os.environ.get("OPENAI_API_KEY", "")
         if not key:
             raise RuntimeError("Set OPENAI_API_KEY for live embeddings")
-        return cls(key, os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small"),
-                   os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"))
+        return cls(
+            key,
+            os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small"),
+            os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+        )
 
     def embed(self, text: str) -> list[float]:
-        if not self.base_url.startswith("https://") and not self.base_url.startswith("http://localhost"):
+        if not self.base_url.startswith("https://") and not self.base_url.startswith(
+            "http://localhost"
+        ):
             raise ValueError("Embedding endpoint must use HTTPS or localhost")
-        request = Request(self.base_url.rstrip("/") + "/embeddings",
-                          data=json.dumps({"model": self.model, "input": text}).encode(),
-                          headers={"Authorization": "Bearer " + self.api_key, "Content-Type": "application/json"},
-                          method="POST")
+        request = Request(
+            self.base_url.rstrip("/") + "/embeddings",
+            data=json.dumps({"model": self.model, "input": text}).encode(),
+            headers={
+                "Authorization": "Bearer " + self.api_key,
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
         with urlopen(request, timeout=self.timeout_seconds) as response:
             data = json.load(response)
         vector = [float(value) for value in data["data"][0]["embedding"]]
