@@ -1,6 +1,12 @@
 # Persistent Conversation Agent
 
-Store conversations in SQLite, recall earlier messages by vector similarity, and compress oversized context.
+Store conversations across sessions and recall earlier context. The CLI and local browser use SQLite with vector similarity; the hosted Vercel app uses Supabase Auth, Postgres full-text search, and row-level security so each user owns their memory.
+
+## Hosted application
+
+The public browser at `https://persistent-conversation-agent.vercel.app/` supports email/password sign-up, sign-in, chat, direct memory entry, history, cross-session recall, and forgetting a session. Account confirmation uses the configured Supabase email service. Chat uses an OpenAI-compatible model provider configured in Vercel. Each signed-in request is checked through Supabase Auth and all database RPCs receive the user's access token.
+
+The hosted service uses lexical full-text recall for predictable Postgres operation. The local CLI's optional semantic embedder is available only in the local product. See [DEPLOYMENT.md](DEPLOYMENT.md) for the hosted configuration and [ARCHITECTURE.md](ARCHITECTURE.md) for data flow and failure modes.
 
 ## Quick start
 
@@ -30,8 +36,12 @@ The installed `conversation-memory` command provides a durable product workflow.
 from persistent_conversation_agent.engine import ConversationMemory
 from persistent_conversation_agent.llm import OpenAICompatibleLLM
 
-memory = ConversationMemory("memory.sqlite3", OpenAICompatibleLLM.from_env(), tenant_id="user-123")
-print(memory.respond("session-1", "Remember that my preferred format is bullet points."))
+memory = ConversationMemory(
+    "memory.sqlite3", OpenAICompatibleLLM.from_env(), tenant_id="user-123"
+)
+print(
+    memory.respond("session-1", "Remember that my preferred format is bullet points.")
+)
 print(memory.respond("session-2", "What format do I prefer?"))
 memory.forget_session("session-1")
 ```
@@ -53,6 +63,20 @@ flowchart LR
     Context --> LLM[Response model]
     LLM --> Memory
     Memory --> Reply[Reply]
+```
+
+Hosted path:
+
+```mermaid
+flowchart LR
+    Browser --> Vercel[FastAPI on Vercel]
+    Vercel --> Auth[Supabase Auth]
+    Vercel --> RPC[Postgres Data API RPCs]
+    RPC --> RLS[Owner-scoped row policies]
+    RLS --> Messages[(Messages and summaries)]
+    RPC --> Search[Full-text recall]
+    Vercel --> Groq[OpenAI-compatible chat API]
+    Groq --> Vercel
 ```
 
 | Component | Responsibility |
@@ -80,6 +104,7 @@ Install this as a library in an authenticated application or worker. Supply the 
 ## Verification
 
 `pytest -q` runs deterministic tests. GitHub Actions runs the same suite on pushes and pull requests.
+`scripts/smoke_hosted.py` creates two temporary users, checks memory isolation, exercises the hosted UI API and model, and removes both users. The script requires Supabase operator credentials in the process environment and must run only from a trusted machine.
 
 ## License
 

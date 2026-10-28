@@ -1,5 +1,11 @@
 # Deployment
 
+## Hosted Vercel and Supabase product
+
+The shared schema migrations live in the separate `agent-suite-platform` repository. Apply `20261028123835_conversation_messages.sql` there before deployment. Connect this Vercel project to the shared Supabase integration. Required environment variables are `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`), `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL`. Keep the database password and service-role key out of this app's browser and runtime. Vercel's integration can inject them, but application code does not use them.
+
+Deploy with `vercel deploy --prod`. Verify `/healthz`, sign-up and confirmation, sign-in, `add`, `history`, `recall`, `chat`, and `forget` through the hosted URL. Run `scripts/smoke_hosted.py` from a trusted machine with operator credentials; it tests two-user RLS isolation and cleans up its test accounts. The hosted product uses Postgres full-text search for recall; the local vector index remains available to CLI users. The default Supabase mail service and a free model tier have low quotas, so configure capacity and mail delivery before a broad launch.
+
 ## Local product
 
 Install with `python -m pip install -e .`, then run the command shown in README. The browser binds to `127.0.0.1:8080` by default. `GET /healthz` is a lightweight health endpoint.
@@ -20,4 +26,4 @@ For semantic retrieval, add `--semantic` before `serve` on the first launch of a
 
 ## Release checks
 
-Run `ruff check src tests`, `ruff format --check src tests`, and `pytest -q`. Test the browser action path and `/healthz` after deployment. Keep secrets in the deployment platform, monitor failed actions and model/provider errors, and set backups for any mounted data volume.
+Run `ruff check .`, `ruff format --check .`, and `pytest -q`. Test the browser action path and `/healthz` after deployment. Keep secrets in the deployment platform, monitor failed actions and model/provider errors, and set backups for any mounted data volume.
