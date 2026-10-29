@@ -111,6 +111,48 @@ Install this as a library in an authenticated application or worker. Supply the 
 `pytest -q` runs deterministic tests. GitHub Actions runs the same suite on pushes and pull requests.
 `scripts/smoke_hosted.py` creates two temporary users, checks memory isolation, exercises the hosted UI API and model, and removes both users. The script requires Supabase operator credentials in the process environment and must run only from a trusted machine.
 
+## Product guide
+
+### Work with a memory
+
+| Action | What it does | Model needed |
+|---|---|---|
+| `add` | Save a user, assistant, or summary message in a named session. | No |
+| `history` | Read messages from one session. | No |
+| `recall` | Find relevant messages across sessions. | No |
+| `chat` | Answer using recent messages and recalled context, then save the exchange. | Yes |
+| `forget` | Delete a session's messages and saved summary. | No |
+
+A practical sequence is to save a preference in `session-1`, begin `session-2`, and ask the assistant to use that preference. `recall` lets you inspect what the system found before you rely on its next answer. `forget` is scoped to a session, so it does not silently delete unrelated conversations.
+
+### Local and hosted data paths
+
+The CLI and local browser keep messages, vectors, and summaries in a SQLite file chosen by the operator. Their required `--tenant` value separates users in the same database, but the application that supplies that value must first authenticate the person. The default hashing embedder is a lightweight lexical baseline. `--semantic` uses the configured embedding provider for better semantic recall, and its embedding model must remain consistent for an existing database.
+
+The hosted implementation instead stores messages and summaries in Supabase Postgres. Supabase Auth provides email and password accounts. Each database call carries the user's access token; row-level policies scope access to that user. Hosted recall uses Postgres full-text search, so wording matters more than in the optional local semantic mode. A hosted chat app is **not yet live**: its migration must be applied and tested before deployment.
+
+### Configuration and data care
+
+| Setting | Applies to | Meaning |
+|---|---|---|
+| `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` | Chat | Model provider credential and endpoint. |
+| `EMBEDDING_MODEL` | Local semantic mode | Embedding model tied to a local database. |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Hosted app | Account and user-scoped storage access. |
+| `--db`, `--tenant` | Local CLI/browser | Database file and trusted tenant identifier. |
+
+Memory is context for an answer, not a source of authority or a guarantee that the answer is correct. Treat recalled text as untrusted user content. Back up the local SQLite file if it matters, and include backup retention in any deletion policy. The hosted database schema places a per-user message quota at the storage boundary. See [ARCHITECTURE.md](ARCHITECTURE.md), [DEPLOYMENT.md](DEPLOYMENT.md), and [SECURITY.md](SECURITY.md) for the full trust and recovery model.
+
+### Common issues
+
+| Symptom | Check |
+|---|---|
+| A memory is not recalled | Try terms present in the saved text; hosted recall is full-text, and the local default is lexical. |
+| The database rejects a changed embedding model | Rebuild local vectors before switching model or dimensions; mixed vector spaces mislead recall. |
+| A conversation appears empty | Confirm the tenant and session ID. They are part of the ownership boundary. |
+| Chat fails but history works | Check the model key, endpoint, and provider quota; storage actions do not require model calls. |
+
+The forget operation removes the active session's records, but a complete privacy policy must also cover backups and the model provider's retention terms. Do not use the pending hosted URL until its migration and isolation checks have passed.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
