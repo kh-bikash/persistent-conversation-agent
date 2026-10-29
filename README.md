@@ -1,12 +1,17 @@
 # Persistent Conversation Agent
 
-Store conversations across sessions and recall earlier context. The CLI and local browser use SQLite with vector similarity; the hosted Vercel app uses Supabase Auth, Postgres full-text search, and row-level security so each user owns their memory.
+## About
 
-## Hosted application
+This assistant can remember what a person has said across conversations. It saves messages under a user and session, brings back relevant earlier context, and uses that context when answering a new message. A user can inspect their history, search for a memory, and forget a session.
 
-The public browser at `https://persistent-conversation-agent.vercel.app/` supports email/password sign-up, sign-in, chat, direct memory entry, history, cross-session recall, and forgetting a session. Account confirmation uses the configured Supabase email service. Chat uses an OpenAI-compatible model provider configured in Vercel. Each signed-in request is checked through Supabase Auth and all database RPCs receive the user's access token.
+### What you can do
 
-The hosted service uses lexical full-text recall for predictable Postgres operation. The local CLI's optional semantic embedder is available only in the local product. See [DEPLOYMENT.md](DEPLOYMENT.md) for the hosted configuration and [ARCHITECTURE.md](ARCHITECTURE.md) for data flow and failure modes.
+- Save and review conversations by session.
+- Search memories from earlier sessions before asking a new question.
+- Chat with recent and recalled context, with compression when context grows too large.
+- Delete a session's messages and summary when they are no longer wanted.
+
+The CLI and local browser are usable now with SQLite. They provide a built-in lexical embedder and an optional semantic embedding mode. A hosted Vercel version has been implemented with email and password accounts, Supabase storage, and full-text recall, but its database migration and live deployment are still pending. The hosted URL in deployment notes should not be treated as available yet.
 
 ## Quick start
 
