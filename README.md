@@ -11,7 +11,7 @@ This assistant can remember what a person has said across conversations. It save
 - Chat with recent and recalled context, with compression when context grows too large.
 - Delete a session's messages and summary when they are no longer wanted.
 
-The CLI and local browser are usable now with SQLite. They provide a built-in lexical embedder and an optional semantic embedding mode. A hosted Vercel version has been implemented with email and password accounts, Supabase storage, and full-text recall, but its database migration and live deployment are still pending. The hosted URL in deployment notes should not be treated as available yet.
+The CLI and local browser are usable now with SQLite. They provide a built-in lexical embedder and an optional semantic embedding mode. A hosted Vercel version has been implemented with email and password accounts, Supabase storage, and full-text recall, but its database migration and live deployment are still pending. There is no public hosted URL to use yet.
 
 ## Quick start
 
